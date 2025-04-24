@@ -48,3 +48,13 @@ LICENSE
 #readme
 
 README.md
+
+#python venv
+/venv
+
+#python cache
+/__pycache__
+
+#rag chromaDB
+
+/rag_store
