@@ -7,25 +7,35 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: Request) {
   const { messages, selectedModel, data } = await req.json();
   const ollamaUrl = process.env.OLLAMA_URL!;
-  const ragUrl = process.env.RAG_SERVER_URL || 'http://localhost:8000';
+  const ragUrl = process.env.RAG_SERVER_URL || 'http://127.0.0.1:8000';
+  console.log("[chat] POST /api/chat invoked");
 
   // RAG helpers
   async function fetchContextRAG(text: string): Promise<string[]> { 
-    const res = await fetch(`${ragUrl}/rag/query`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
-    });
-    const json = await res.json();
-    return Array.isArray(json.context) ? json.context : [];
-  
+    try {
+      const res = await fetch(`${ragUrl}/rag/query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+      const json = await res.json();
+      return Array.isArray(json.context) ? json.context : [];
+    } catch (err) {
+      console.error("[chat][RAG] query failed", err);
+      return [];  // fallback to no context
+    }
   }
+  
   async function storeToRAG(text: string) { 
-    await fetch(`${ragUrl}/rag/store`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
-    }); 
+    try {
+      await fetch(`${ragUrl}/rag/store`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      }); 
+    } catch (err) {
+      console.error("[chat][RAG] store failed", err);
+    }
   }
 
   const initialMessages = messages.slice(0, -1);
@@ -50,7 +60,7 @@ export async function POST(req: Request) {
   const result = streamText({
     model: ollama(selectedModel),
     messages: [
-      ...convertToCoreMessages(initialMessages), // now optional in v4 :contentReference[oaicite:7]{index=7}
+      ...convertToCoreMessages(initialMessages), 
       { role: 'user', content: messageContent },
     ],
     onFinish: async ({ text: replyText }) => {
