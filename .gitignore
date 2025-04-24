@@ -48,3 +48,10 @@ LICENSE
 #readme
 
 README.md
+
+WhatImDoing.md
+
+/venv
+/rag_store
+
+/__pycache__
